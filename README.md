@@ -29,7 +29,7 @@ git branch -M main
 git push -u origin main
 ```
 
-## 3. 部署到云端服务器 (推荐 Vercel)
+## 3.1 部署到云端服务器 (推荐 Vercel)
 Vercel 是部署此类前端应用最简单且免费（个人使用）的平台：
 
 1.  **关联账号**：在 [Vercel](https://vercel.com/) 注册并关联你的 GitHub 账号。
@@ -39,7 +39,55 @@ Vercel 是部署此类前端应用最简单且免费（个人使用）的平台�
     *   **Name**: `API_KEY`
     *   **Value**: 输入你刚才从 Google AI Studio 获取的 API Key。
 4.  **点击 Deploy**：稍等几分钟，Vercel 会为你生成一个公共的 HTTPS 访问链接。
+## 3.2 部署到 Vultr (VPS 服务器)
+如果您希望在自己的 Vultr 云服务器上运行，请遵循以下步骤：
 
+### 第一步：准备服务器
+1.  在 Vultr 购买一个 **Ubuntu 22.04** 实例（最便宜的 5 美元方案即可）。
+2.  通过 SSH 登录服务器：`ssh root@你的服务器IP`。
+
+### 第二步：安装 Nginx
+```bash
+sudo apt update
+sudo apt install nginx -y
+```
+
+### 第三步：上传文件
+1.  将本项目所有文件上传到服务器的 `/var/www/html` 目录。
+2.  可以使用 `scp` 命令或 FileZilla。
+    *   `scp -r ./* root@你的服务器IP:/var/www/html`
+
+### 第四步：处理 API Key
+由于 VPS 只是提供静态文件，浏览器无法直接读取系统环境变量。
+**方法 A (使用构建工具)**：在本地运行 `npm run build`，并在 CI/CD 中注入 Key。
+**方法 B (手动替换，仅限私用)**：
+在服务器上编辑 `App.tsx`，将 `process.env.API_KEY` 替换为 `"你的真实APIKey"`。
+> *注意：这会导致 Key 暴露在前端代码中，请确保你的网页链接不被他人泄露。*
+
+### 第五步：配置 HTTPS (关键)
+浏览器要求麦克风权限必须在 HTTPS 下运行。使用 Certbot 获取免费证书：
+```bash
+sudo apt install certbot python3-certbot-nginx -y
+sudo certbot --nginx -d 你的域名.com
+```
+
+### 第六步：Nginx 配置示例
+编辑 `/etc/nginx/sites-available/default`：
+```nginx
+server {
+    listen 80;
+    server_name 你的域名.com;
+    root /var/www/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+Vultr 部署难点：在于 HTTPS。如果你没有购买域名并指向 Vultr IP，你将无法通过手机 Safari 调用麦克风进行实时转录。
+推荐方案：对于初学者，Vercel 是更好的选择。它完全免费，且自带 HTTPS 域名，你只需要把代码传到 GitHub 即可一键完成。
+---
 ## 4. 为什么要在云端运行？
 *   **HTTPS 强制要求**：浏览器处于安全考虑，只有在 `localhost` 或 `HTTPS` 环境下才允许网页调用麦克风。云端部署自动提供 HTTPS。
 *   **跨设备访问**：部署后，你可以直接在 iPhone/iPad 的 Safari 浏览器中打开该链接进行实时转录。
