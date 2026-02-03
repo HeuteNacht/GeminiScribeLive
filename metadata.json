@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Gemini Scribe Live",
+  "description": "A professional-grade real-time audio transcription and translation suite powered by Gemini 3 Flash. Features live waveform visualization and intelligent text processing.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
